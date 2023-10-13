@@ -1,3 +1,5 @@
+# Không checkout để tránh lỗi, xử lý clone repo mới
+# remote unpack failed: error Shallow object update failed: The object 2e5aa7d6f92bafdc75089d7a30287e1d082c7ddf is being referenced but does not exist.
 trigger:
    branches:
       include:
