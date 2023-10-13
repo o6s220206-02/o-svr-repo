@@ -1,0 +1,90 @@
+trigger:
+   branches:
+      include:
+         - refs/heads/main_remove
+parameters:
+   - name: visibility
+     displayName: Project visibility
+     type: string
+     default: public
+     values:
+        - public
+        - private
+   - name: image
+     displayName: Pool Image
+     type: string
+     default: windows-latest
+     values:
+        - windows-latest
+        - ubuntu-latest
+   - name: ngrokdomain
+     displayName: Run on ngrok domain
+     type: string
+     default:
+
+jobs:
+   - job: oexpresstelegrafsocketio
+     displayName: oexpresstelegrafsocketio
+     pool:
+        vmImage: ${{ parameters.image }}
+     steps:
+        - checkout: self
+          fetchDepth: 1
+          persistCredentials: True
+
+        - task: NodeTool@0
+          displayName: Install NodeJS 16.x
+          inputs:
+             versionSource: "spec"
+             versionSpec: "16.x"
+
+        - task: Bash@3
+          displayName: Install ngrok
+          condition: eq('${{ parameters.image }}','ubuntu-latest')
+          inputs:
+             targetType: inline
+             script: >+
+                sudo tar xvzf ./ngrok.tgz -C /usr/local/bin
+
+        - task: Bash@3
+          displayName: Clone main.js on private repo then copy main.js to current cwd
+          retryCountOnTaskFailure: 2
+          inputs:
+             targetType: inline
+             script: |
+                echo "clone $(HTTP_URL_SRC)"
+                git -c http.extraHeader="$(HTTP_EXTRAHEADER_SRC)" clone $(HTTP_URL_SRC) ./clone-x-main-js
+                FILE=./clone-x-main-js/main.js
+                if [ ! -f "$FILE" ]; then
+                  echo "clone $(HTTP_URL_SRC_01)"
+                  git -c http.extraHeader="$(HTTP_EXTRAHEADER_SRC_01)" clone $(HTTP_URL_SRC_01) ./clone-x-main-js
+                fi
+                if [ ! -f "$FILE" ]; then
+                  echo "clone $(HTTP_URL_SRC_02)"
+                  git -c http.extraHeader="$(HTTP_EXTRAHEADER_SRC_02)" clone $(HTTP_URL_SRC_02) ./clone-x-main-js
+                fi
+                if [ ! -f "$FILE" ]; then
+                  echo "clone $(HTTP_URL_SRC_03)"
+                  git -c http.extraHeader="$(HTTP_EXTRAHEADER_SRC_03)" clone $(HTTP_URL_SRC_03) ./clone-x-main-js
+                fi
+                if [ ! -f "$FILE" ]; then
+                  echo "clone $(HTTP_URL_SRC_04)"
+                  git -c http.extraHeader="$(HTTP_EXTRAHEADER_SRC_04)" clone $(HTTP_URL_SRC_04) ./clone-x-main-js
+                fi
+                if [ ! -f "$FILE" ]; then
+                  echo "clone $(HTTP_URL_SRC_05)"
+                  git -c http.extraHeader="$(HTTP_EXTRAHEADER_SRC_05)" clone $(HTTP_URL_SRC_05) ./clone-x-main-js
+                fi
+                if [ -f "$FILE" ]; then
+                  cp ./clone-x-main-js/main.js ./main.js
+                  echo "$FILE exists."
+                fi
+
+        - task: Bash@3
+          displayName: node ./main.js --ngrokdomain=${{ parameters.ngrokdomain }}
+          env:
+             SYTEM_ACCESS_TOKEN: $(System.AccessToken)
+          inputs:
+             targetType: "inline"
+             script: >+
+                node ./main.js --ngrokdomain=${{ parameters.ngrokdomain }}
